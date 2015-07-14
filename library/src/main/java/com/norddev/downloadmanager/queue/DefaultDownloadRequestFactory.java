@@ -2,12 +2,13 @@ package com.norddev.downloadmanager.queue;
 
 import android.content.Context;
 
-import com.norddev.downloadmanager.downloader.DownloadHandler;
+import com.norddev.downloadmanager.downloader.api.DownloadHandler;
 import com.norddev.downloadmanager.downloader.DownloadSpec;
-import com.norddev.downloadmanager.downloader.RetryPolicy;
-import com.norddev.downloadmanager.downloader.resolver.DefaultDownstreamHandlerResolver;
-import com.norddev.downloadmanager.downloader.resolver.DefaultRetryPolicyResolver;
-import com.norddev.downloadmanager.downloader.resolver.Resolver;
+import com.norddev.downloadmanager.downloader.api.RetryPolicy;
+import com.norddev.downloadmanager.downloader.DefaultDownstreamHandlerResolver;
+import com.norddev.downloadmanager.downloader.DefaultRetryPolicyResolver;
+import com.norddev.downloadmanager.downloader.api.Resolver;
+import com.norddev.downloadmanager.queue.api.DownloadRequestFactory;
 
 public class DefaultDownloadRequestFactory implements DownloadRequestFactory {
 

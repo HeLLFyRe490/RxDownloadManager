@@ -1,4 +1,4 @@
-package com.norddev.downloadmanager.downloader;
+package com.norddev.downloadmanager.downloader.api;
 
 public interface RetryPolicy {
     void onError(Exception e);

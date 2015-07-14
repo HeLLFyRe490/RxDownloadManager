@@ -1,7 +1,7 @@
-package com.norddev.downloadmanager.downloader.resolver;
+package com.norddev.downloadmanager.downloader;
 
-import com.norddev.downloadmanager.downloader.DefaultRetryPolicy;
-import com.norddev.downloadmanager.downloader.RetryPolicy;
+import com.norddev.downloadmanager.downloader.api.Resolver;
+import com.norddev.downloadmanager.downloader.api.RetryPolicy;
 
 public class DefaultRetryPolicyResolver implements Resolver<RetryPolicy> {
     @Override

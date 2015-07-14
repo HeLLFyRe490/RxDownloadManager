@@ -4,7 +4,7 @@ import android.support.annotation.NonNull;
 
 import com.norddev.downloadmanager.cache.Cache;
 import com.norddev.downloadmanager.downloader.Downloader;
-import com.norddev.downloadmanager.queue.DownloadRequestFactory;
+import com.norddev.downloadmanager.queue.api.DownloadRequestFactory;
 import com.norddev.downloadmanager.queue.RequestQueue;
 
 public class DownloadManager {

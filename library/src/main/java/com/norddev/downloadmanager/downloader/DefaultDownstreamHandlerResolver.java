@@ -1,9 +1,10 @@
-package com.norddev.downloadmanager.downloader.resolver;
+package com.norddev.downloadmanager.downloader;
 
 import android.content.Context;
 
 import com.norddev.downloadmanager.downloader.DefaultDownloadHandler;
-import com.norddev.downloadmanager.downloader.DownloadHandler;
+import com.norddev.downloadmanager.downloader.api.DownloadHandler;
+import com.norddev.downloadmanager.downloader.api.Resolver;
 
 import java.io.File;
 

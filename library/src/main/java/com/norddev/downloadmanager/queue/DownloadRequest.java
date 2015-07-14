@@ -1,8 +1,8 @@
 package com.norddev.downloadmanager.queue;
 
 import com.norddev.downloadmanager.downloader.DownloadSpec;
-import com.norddev.downloadmanager.downloader.DownloadHandler;
-import com.norddev.downloadmanager.downloader.RetryPolicy;
+import com.norddev.downloadmanager.downloader.api.DownloadHandler;
+import com.norddev.downloadmanager.downloader.api.RetryPolicy;
 
 import java.util.Map;
 
@@ -39,4 +39,11 @@ public class DownloadRequest {
         return mDownloadHandler;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if(o != null && o instanceof DownloadRequest){
+            return ((DownloadRequest) o).getKey().equals(getKey());
+        }
+        return false;
+    }
 }

@@ -1,4 +1,4 @@
-package com.norddev.downloadmanager.queue;
+package com.norddev.downloadmanager.queue.api;
 
 import java.util.List;
 

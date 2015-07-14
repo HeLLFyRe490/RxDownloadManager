@@ -5,7 +5,7 @@ android {
     buildToolsVersion "22.0.1"
 
     defaultConfig {
-        applicationId "com.norddev.rxdownloadmanagerdemo"
+        applicationId "com.norddev.downloadmanager.demo"
         minSdkVersion 10
         targetSdkVersion 22
         versionCode 1
@@ -24,4 +24,5 @@ dependencies {
     compile project(':library')
     compile 'com.android.support:appcompat-v7:22.2.0'
     compile 'com.jakewharton:butterknife:6.1.0'
+    compile 'com.squareup.okhttp:mockwebserver:2.4.0'
 }

@@ -2,6 +2,8 @@ package com.norddev.downloadmanager.queue;
 
 import android.support.annotation.NonNull;
 
+import com.norddev.downloadmanager.queue.api.QueueStorage;
+
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -53,7 +55,7 @@ public class InMemoryQueueStorage<E> implements QueueStorage<E> {
 
     @Override
     public E peek() {
-        return mItems.getFirst();
+        return mItems.peek();
     }
 
     @Override

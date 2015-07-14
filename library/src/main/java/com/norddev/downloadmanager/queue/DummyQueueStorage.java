@@ -1,5 +1,7 @@
 package com.norddev.downloadmanager.queue;
 
+import com.norddev.downloadmanager.queue.api.QueueStorage;
+
 import java.util.Collections;
 import java.util.List;
 

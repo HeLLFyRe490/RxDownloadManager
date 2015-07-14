@@ -1,117 +1,218 @@
 package com.norddev.downloadmanager.downloader;
 
-import android.os.Build;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Message;
+import android.util.Log;
 
-public class DownloaderInternal implements Handler.Callback {
+import com.norddev.downloadmanager.EventLoop;
 
-    public static final int PAUSE_EVENT = 0;
-    public static final int RESUME_EVENT = 1;
-    public static final int DOWNLOAD_EVENT = 2;
+/**
+ *
+ */
+public class DownloaderInternal {
 
-    private static final int STATE_IDLE = 0;
-    private static final int STATE_PAUSED = 1;
-    private static final int STATE_STOPPED = 2;
-    private static final int STATE_DONWLOADING = 3;
+    private static final String TAG = "DownloaderInternal";
 
-    private DownloaderThread mThread;
-    private Handler mHandler;
-    private volatile int mState;
-    private volatile DownloadTask mCurrentTask;
+    private final EventLoop mDownloadLoop;
+    private final EventLoop mEventLoop;
 
     public DownloaderInternal() {
-        setState(STATE_STOPPED);
+        mEventLoop = new EventLoop("DownloadEventLoop", new DownloadEventLoopCallback());
+        mDownloadLoop = new EventLoop("DownloadLoop", new DownloadLoopCallback());
     }
 
-    public synchronized int getState() {
-        return mState;
-    }
-
-    public synchronized void start(){
-        if(!isStarted()){
-            mThread = new DownloaderThread();
-            mThread.start();
-            mHandler = new Handler(mThread.getLooper());
-            setState(STATE_IDLE);
+    public void start() {
+        if (!isRunning()) {
+            mEventLoop.start();
+            mEventLoop.post(DownloadEventLoopCallback.START_EVENT);
         }
     }
 
-    public synchronized void pause() {
-        if(isStarted()) {
-            mHandler.sendEmptyMessage(PAUSE_EVENT);
+    public void pause() {
+        if (isRunning()) {
+            mEventLoop.post(DownloadEventLoopCallback.PAUSE_EVENT);
         }
     }
 
-    public synchronized void resume() {
-        if(isStarted()) {
-            mHandler.sendEmptyMessage(RESUME_EVENT);
+    public void resume() {
+        if (isRunning()) {
+            mEventLoop.post(DownloadEventLoopCallback.RESUME_EVENT);
         }
     }
 
-    public synchronized void process(DownloadTask task){
-        if(isStarted()) {
-            Message.obtain(mHandler, DOWNLOAD_EVENT, task).sendToTarget();
+    public void process(DownloadTask task) {
+        if (isRunning()) {
+            mEventLoop.post(DownloadEventLoopCallback.START_DOWNLOAD_EVENT, task);
         }
     }
 
-    public synchronized void stop(){
-        if(isStarted()) {
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2){
-                mThread.quitSafely();
-            } else {
-                mThread.quit();
+    public void stop() {
+        if (isRunning()) {
+            mEventLoop.post(DownloadEventLoopCallback.STOP_EVENT);
+            mEventLoop.quit();
+        }
+    }
+
+    public void interrupt() {
+        if (isRunning()) {
+            mEventLoop.post(DownloadEventLoopCallback.INTERRUPT_EVENT);
+        }
+    }
+
+    public boolean isRunning() {
+        return mEventLoop.isRunning();
+    }
+
+    private class DownloadLoopCallback implements Handler.Callback {
+        private static final int DOWNLOAD_EVENT = 0;
+
+        @Override
+        public boolean handleMessage(Message msg) {
+            switch (msg.what) {
+                case DOWNLOAD_EVENT:
+                    DownloadTask task = (DownloadTask) msg.obj;
+                    task.execute();
+                    mEventLoop.post(DownloadEventLoopCallback.FINISH_DOWNLOAD_EVENT);
+                    break;
             }
-            setState(STATE_STOPPED);
-            mHandler = null;
-            mThread = null;
+            return false;
         }
     }
 
-    public synchronized boolean isStarted(){
-        return mHandler != null;
-    }
+    private class DownloadEventLoopCallback implements Handler.Callback {
 
-    private void setState(int state){
-        mState = state;
-    }
+        private static final int PAUSE_EVENT = 0;
+        private static final int RESUME_EVENT = 1;
+        private static final int START_DOWNLOAD_EVENT = 2;
+        private static final int FINISH_DOWNLOAD_EVENT = 3;
+        private static final int INTERRUPT_EVENT = 4;
+        private static final int START_EVENT = 5;
+        private static final int STOP_EVENT = 6;
 
-    private void setState(int state, DownloadTask task){
-        mState = state;
-        mCurrentTask = task;
-    }
+        private static final int STATE_IDLE = 0;
+        private static final int STATE_PAUSED = 1;
+        private static final int STATE_STOPPED = 2;
+        private static final int STATE_DOWNLOADING = 3;
 
-    private void clearTask(){
-        mCurrentTask = null;
-    }
+        private int mState;
+        private DownloadTask mCurrentTask;
 
-    @Override
-    public boolean handleMessage(Message msg) {
-        switch (msg.what){
-            case PAUSE_EVENT:
-                setState(STATE_PAUSED, mCurrentTask);
-                break;
-            case RESUME_EVENT:
-                if(mCurrentTask != null){
-                    process(mCurrentTask);
-                } else {
-                    setState(STATE_IDLE);
-                }
-                break;
-            case DOWNLOAD_EVENT:
-                DownloadTask task = (DownloadTask) msg.obj;
-                setState(STATE_DONWLOADING, task);
-                task.execute();
-                clearTask();
-                break;
+        public DownloadEventLoopCallback() {
+            setState(STATE_STOPPED, null);
         }
-        return false;
-    }
 
-    private static class DownloaderThread extends HandlerThread {
-        public DownloaderThread() {
-            super("DownloaderThread", android.os.Process.THREAD_PRIORITY_BACKGROUND);
+        private void setState(int state, DownloadTask task) {
+            Log.d(TAG, "State change: " + stringForState(mState) + " -> " + stringForState(state));
+            mState = state;
+            if(mCurrentTask != null && task == null){
+                Log.d(TAG, "Clearing current task");
+            } else if(mCurrentTask == null && task != null){
+                Log.d(TAG, "Setting current task");
+            }
+            mCurrentTask = task;
+        }
+
+        private String stringForState(int state){
+            switch (state){
+                case STATE_DOWNLOADING:
+                    return "DOWNLOADING";
+                case STATE_IDLE:
+                    return "IDLE";
+                case STATE_PAUSED:
+                    return "PAUSED";
+                case STATE_STOPPED:
+                    return "STOPPED";
+                default:
+                    return "UNKNOWN";
+            }
+        }
+
+        @Override
+        public boolean handleMessage(Message msg) {
+            switch (msg.what) {
+                case START_EVENT:
+                    if (mState == STATE_STOPPED) {
+                        mDownloadLoop.start();
+                        setState(STATE_IDLE, null);
+                    } else {
+                        //STATE_IDLE
+                        //STATE_PAUSED
+                        //STATE_DOWNLOADING
+                    }
+                    break;
+                case STOP_EVENT:
+                    if (mState != STATE_STOPPED) {
+                        if (mCurrentTask != null) {
+                            mCurrentTask.interrupt();
+                        }
+                        setState(STATE_STOPPED, null);
+                        mDownloadLoop.quit();
+                    } else {
+                        //STATE_IDLE
+                        //STATE_PAUSED
+                        //STATE_DOWNLOADING
+                    }
+                    break;
+                case PAUSE_EVENT:
+                    if (mState == STATE_IDLE ||
+                            mState == STATE_DOWNLOADING) {
+                        if (mCurrentTask != null) {
+                            mCurrentTask.interrupt();
+                        }
+                        setState(STATE_PAUSED, mCurrentTask);
+                    } else {
+                        //STATE_PAUSED
+                        //STATE_STOPPED
+                    }
+                    break;
+                case RESUME_EVENT:
+                    if (mState == STATE_PAUSED) {
+                        if (mCurrentTask != null) {
+                            setState(STATE_DOWNLOADING, mCurrentTask);
+                            mDownloadLoop.post(DownloadLoopCallback.DOWNLOAD_EVENT, mCurrentTask);
+                        } else {
+                            setState(STATE_IDLE, null);
+                        }
+                    } else {
+                        //STATE_IDLE
+                        //STATE_`WNLOADING
+                        //STATE_STOPPED
+                    }
+                    break;
+                case START_DOWNLOAD_EVENT:
+                    DownloadTask task = (DownloadTask) msg.obj;
+                    if (mState == STATE_PAUSED) {
+                        setState(STATE_PAUSED, task);
+                    } else if (mState == STATE_IDLE ||
+                            mState == STATE_DOWNLOADING) {
+                        setState(STATE_DOWNLOADING, task);
+                        mDownloadLoop.post(DownloadLoopCallback.DOWNLOAD_EVENT, task);
+                    } else {
+                        //STATE_STOPPED
+                    }
+                    break;
+                case FINISH_DOWNLOAD_EVENT:
+                    if (mState == STATE_DOWNLOADING) {
+                        setState(STATE_IDLE, null);
+                    } else {
+                        //STATE_IDLE
+                        //STATE_PAUSED
+                        //STATE_STOPPED
+                    }
+                    break;
+                case INTERRUPT_EVENT:
+                    if (mState == STATE_DOWNLOADING) {
+                        mCurrentTask.interrupt();
+                        setState(STATE_IDLE, null);
+                    } else {
+                        //STATE_IDLE
+                        //STATE_PAUSED
+                        //STATE_STOPPED
+                    }
+                    break;
+            }
+            return false;
         }
     }
+
 }
