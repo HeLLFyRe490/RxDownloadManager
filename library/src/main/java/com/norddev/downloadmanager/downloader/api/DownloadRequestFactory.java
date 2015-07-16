@@ -1,7 +1,7 @@
-package com.norddev.downloadmanager.queue.api;
+package com.norddev.downloadmanager.downloader.api;
 
 import com.norddev.downloadmanager.downloader.DownloadSpec;
-import com.norddev.downloadmanager.queue.DownloadRequest;
+import com.norddev.downloadmanager.downloader.DownloadRequest;
 
 public interface DownloadRequestFactory {
     DownloadRequest createRequest(DownloadSpec spec);

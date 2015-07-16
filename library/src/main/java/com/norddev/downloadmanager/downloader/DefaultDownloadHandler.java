@@ -2,33 +2,30 @@ package com.norddev.downloadmanager.downloader;
 
 import android.support.annotation.NonNull;
 
-import com.norddev.downloadmanager.Util;
+import com.norddev.downloadmanager.cache.CacheFile;
+import com.norddev.downloadmanager.cache.api.Cache;
+import com.norddev.downloadmanager.common.C;
+import com.norddev.downloadmanager.common.Util;
 import com.norddev.downloadmanager.downloader.api.DownloadHandler;
-import com.norddev.downloadmanager.queue.DownloadRequest;
 import com.squareup.okhttp.Response;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 /**
  *
  */
 public class DefaultDownloadHandler implements DownloadHandler {
-    private File mDestinationDir;
+    private Cache mCache;
     private FileOutputStream mOutput;
-    private File mDestinationFile;
-    private long mContentSize;
-
-    public DefaultDownloadHandler(File destinationDir) {
-        mDestinationDir = destinationDir;
-    }
+    private CacheFile mCurrentCacheFile;
+    private DownloadRequest mCurrentRequest;
 
     @Override
-    public void onRequestStarted(@NonNull DownloadRequest request) throws Exception {
-        mDestinationFile = new File(mDestinationDir, request.getKey());
+    public void onRequestStarted(@NonNull DownloadRequest request, Cache cache) throws Exception {
+        mCurrentRequest = request;
+        mCache = cache;
+        mCurrentCacheFile = mCache.getFile(mCurrentRequest.getKey());
     }
 
     @Override
@@ -38,30 +35,38 @@ public class DefaultDownloadHandler implements DownloadHandler {
 
     @Override
     public void onResponseReceived(@NonNull Response response) throws IOException {
-        if(response.isSuccessful()){
-            mOutput = new FileOutputStream(mDestinationFile, true);
+        if (response.isSuccessful()) {
+            if(mCurrentCacheFile == null){
+                mCurrentCacheFile = mCache.createFile(mCurrentRequest.getKey(), response.body().contentLength());
+            }
+            mOutput = new FileOutputStream(mCurrentCacheFile.getFile(), true);
         }
     }
 
     @Override
     public long getPosition() {
-        return mDestinationFile.length();
+        return mCurrentCacheFile != null ? mCurrentCacheFile.getBytesDownloaded() : 0;
     }
 
     @Override
     public void onError(@NonNull Exception e) {
-        Util.closeQuietly(mOutput);
-        mOutput = null;
+        cleanup();
     }
 
     @Override
     public void onRequestFinished() {
+        cleanup();
+    }
+
+    private void cleanup() {
         Util.closeQuietly(mOutput);
         mOutput = null;
+        mCurrentCacheFile = null;
+        mCurrentRequest = null;
     }
 
     @Override
-    public long getContentSize() {
-        return mContentSize;
+    public long getFileSize() {
+        return mCurrentCacheFile != null ? mCurrentCacheFile.getFileSizeBytes() : C.UNKNOWN;
     }
 }

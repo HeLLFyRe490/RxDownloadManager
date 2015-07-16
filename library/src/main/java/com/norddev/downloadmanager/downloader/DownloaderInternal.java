@@ -4,7 +4,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
-import com.norddev.downloadmanager.EventLoop;
+import com.norddev.downloadmanager.common.EventLoop;
 
 /**
  *
@@ -15,9 +15,11 @@ public class DownloaderInternal {
 
     private final EventLoop mDownloadLoop;
     private final EventLoop mEventLoop;
+    private final DownloadEventLoopCallback mCallback;
 
     public DownloaderInternal() {
-        mEventLoop = new EventLoop("DownloadEventLoop", new DownloadEventLoopCallback());
+        mCallback = new DownloadEventLoopCallback();
+        mEventLoop = new EventLoop("DownloadEventLoop", mCallback);
         mDownloadLoop = new EventLoop("DownloadLoop", new DownloadLoopCallback());
     }
 
@@ -63,6 +65,10 @@ public class DownloaderInternal {
         return mEventLoop.isRunning();
     }
 
+    public boolean isPaused() {
+        return mCallback.getState() == DownloadEventLoopCallback.STATE_PAUSED;
+    }
+
     private class DownloadLoopCallback implements Handler.Callback {
         private static final int DOWNLOAD_EVENT = 0;
 
@@ -94,11 +100,15 @@ public class DownloaderInternal {
         private static final int STATE_STOPPED = 2;
         private static final int STATE_DOWNLOADING = 3;
 
-        private int mState;
+        private volatile int mState;
         private DownloadTask mCurrentTask;
 
         public DownloadEventLoopCallback() {
             setState(STATE_STOPPED, null);
+        }
+
+        public int getState() {
+            return mState;
         }
 
         private void setState(int state, DownloadTask task) {

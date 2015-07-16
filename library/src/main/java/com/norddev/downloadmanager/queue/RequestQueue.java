@@ -2,6 +2,9 @@ package com.norddev.downloadmanager.queue;
 
 import android.support.annotation.NonNull;
 
+import com.norddev.downloadmanager.downloader.DownloadRequest;
+import com.norddev.downloadmanager.queue.api.QueueSource;
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -10,16 +13,30 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class RequestQueue {
 
+    /**
+     *
+     */
     public interface Listener {
+        /**
+         * @param request
+         */
         void onRequestAdded(DownloadRequest request);
+
+        /**
+         *
+         * @param request
+         */
         void onRequestRemoved(DownloadRequest request);
     }
 
-    private InMemoryQueueStorage<DownloadRequest> mQueueStorage;
+    private final QueueSource mSource;
     private final CopyOnWriteArrayList<Listener> mListeners;
 
-    public RequestQueue() {
-        mQueueStorage = new InMemoryQueueStorage<>();
+    /**
+     * @param source
+     */
+    public RequestQueue(QueueSource source) {
+        mSource = source;
         mListeners = new CopyOnWriteArrayList<>();
     }
 
@@ -43,13 +60,21 @@ public class RequestQueue {
         }
     }
 
-    public void enqueue(@NonNull DownloadRequest request){
-        mQueueStorage.enqueue(request);
-        notifyRequestAdded(request);
+    public boolean add(@NonNull DownloadRequest request){
+        if(!contains(request.getKey())) {
+            mSource.enqueue(request);
+            notifyRequestAdded(request);
+            return true;
+        }
+        return false;
     }
 
-    public boolean remove(@NonNull DownloadRequest request){
-        boolean success =  mQueueStorage.remove(request);
+    public void shift(int fromPosition, int toPosition) {
+        mSource.shift(fromPosition, toPosition);
+    }
+
+    public boolean remove(@NonNull String key){
+        boolean success =  mSource.remove(key);
         if(success){
             notifyRequestRemoved(request);
         }
@@ -57,14 +82,18 @@ public class RequestQueue {
     }
 
     public void clear(){
-        mQueueStorage.clear();
+        mSource.clear();
     }
 
     public DownloadRequest peek(){
-        return mQueueStorage.peek();
+        return mSource.peek();
     }
 
     public List<DownloadRequest> toList() {
-        return mQueueStorage.toList();
+        return mSource.toList();
+    }
+
+    public boolean contains(String key) {
+        return mSource.contains(key);
     }
 }

@@ -1,5 +1,6 @@
 package com.norddev.downloadmanager.demo;
 
+import android.app.ActivityManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -7,6 +8,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 import com.norddev.downloadmanager.DownloadManager;
+import com.norddev.downloadmanager.downloader.Downloader;
 import com.norddev.downloadmanager.downloader.RequestQueueProcessor;
 
 /**
@@ -32,6 +34,20 @@ public class DownloaderService extends Service {
         context.startService(i);
     }
 
+    public static boolean isRunning(Context context) {
+        return isServiceRunning(context, DownloaderService.class);
+    }
+
+    private static boolean isServiceRunning(Context context, Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -55,7 +71,7 @@ public class DownloaderService extends Service {
         } else {
             Log.w(TAG, "No action set for intent");
         }
-        return START_STICKY;
+        return START_STICKY | START_FLAG_REDELIVERY;
     }
 
     @Override

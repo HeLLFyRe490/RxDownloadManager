@@ -3,10 +3,8 @@ package com.norddev.downloadmanager.downloader;
 import android.os.Handler;
 import android.os.Message;
 
-import com.norddev.downloadmanager.EventLoop;
-import com.norddev.downloadmanager.queue.DownloadRequest;
+import com.norddev.downloadmanager.common.EventLoop;
 import com.norddev.downloadmanager.queue.RequestQueue;
-import com.squareup.okhttp.Response;
 
 /**
  *
@@ -78,6 +76,7 @@ public class RequestQueueProcessor implements Downloader.Listener, RequestQueue.
     @Override
     public void onDownloadComplete(DownloadRequest request) {
         mEventLoop.post(FINISH_REQUEST, request);
+        mEventLoop.post(PROCESS_NEXT_REQUEST);
     }
 
     @Override

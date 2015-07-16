@@ -2,10 +2,11 @@ package com.norddev.downloadmanager;
 
 import android.support.annotation.NonNull;
 
-import com.norddev.downloadmanager.cache.Cache;
+import com.norddev.downloadmanager.cache.api.Cache;
 import com.norddev.downloadmanager.downloader.Downloader;
-import com.norddev.downloadmanager.queue.api.DownloadRequestFactory;
+import com.norddev.downloadmanager.downloader.api.DownloadRequestFactory;
 import com.norddev.downloadmanager.queue.RequestQueue;
+import com.norddev.downloadmanager.queue.api.QueueSource;
 
 public class DownloadManager {
 
@@ -16,9 +17,9 @@ public class DownloadManager {
 
     public DownloadManager(Configuration configuration) {
         mDownloadRequestFactory = configuration.mDownloadRequestFactory;
-        mRequestQueue = new RequestQueue();
-        mDownloader = new Downloader();
-        mCache = new Cache();
+        mRequestQueue = new RequestQueue(configuration.mQueueSource);
+        mCache = configuration.mCache;
+        mDownloader = new Downloader(mCache);
     }
 
     @NonNull
@@ -41,20 +42,43 @@ public class DownloadManager {
         return mDownloader;
     }
 
+    /**
+     *
+     */
     public static class Configuration {
         private final DownloadRequestFactory mDownloadRequestFactory;
+        private final Cache mCache;
+        private final QueueSource mQueueSource;
 
-        public Configuration(Builder builder) {
+        private Configuration(Builder builder) {
             mDownloadRequestFactory = builder.mDownloadRequestFactory;
+            mCache = builder.mCache;
+            mQueueSource = builder.mQueueSource;
         }
 
+        /**
+         *
+         */
         public static class Builder {
             private DownloadRequestFactory mDownloadRequestFactory;
+            private Cache mCache;
+            private QueueSource mQueueSource;
 
             public void setDownloadRequestFactory(@NonNull DownloadRequestFactory downloadRequestFactory) {
                 mDownloadRequestFactory = downloadRequestFactory;
             }
 
+            public void setCache(@NonNull Cache cache){
+                mCache = cache;
+            }
+
+            public void setQueueSource(@NonNull QueueSource queueSource){
+                mQueueSource = queueSource;
+            }
+
+            /**
+             * @return The new Configuration instance
+             */
             public Configuration build() {
                 return new Configuration(this);
             }

@@ -4,4 +4,6 @@
     <string name="label_downloader_service">DownloaderService</string>
     <string name="action_clear_cache">Clear Cache</string>
     <string name="action_add_to_queue">Add To Queue</string>
+    <string name="action_clear_queue">Clear Queue</string>
+    <string name="action_view_cache">View Cache</string>
 </resources>

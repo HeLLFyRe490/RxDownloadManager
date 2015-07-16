@@ -1,4 +1,4 @@
-package com.norddev.downloadmanager;
+package com.norddev.downloadmanager.common;
 
 import java.io.Closeable;
 import java.io.File;
@@ -108,6 +108,10 @@ public final class Util {
         return range;
     }
 
+    public static String buildContentRange(long offset, long length, long fileSize){
+        return String.format("bytes %d-%d/%d", offset, (length - 1), fileSize);
+    }
+
     public static long[] parseRange(String range) {
         if (range != null) {
             Matcher matcher = RANGE_HEADER.matcher(range);
@@ -140,4 +144,5 @@ public final class Util {
         }
         return null;
     }
+
 }

@@ -1,7 +1,6 @@
 package com.norddev.downloadmanager.downloader;
 
-import com.norddev.downloadmanager.queue.DownloadRequest;
-import com.squareup.okhttp.Response;
+import com.norddev.downloadmanager.cache.api.Cache;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -9,14 +8,20 @@ public class Downloader {
 
     private final DownloaderInternal mDownloaderInternal;
     private final CopyOnWriteArrayList<Listener> mListeners;
+    private final Cache mCache;
 
-    public Downloader() {
+    public Downloader(Cache cache) {
+        mCache = cache;
         mDownloaderInternal = new DownloaderInternal();
         mListeners = new CopyOnWriteArrayList<>();
     }
 
     public boolean isRunning() {
         return mDownloaderInternal.isRunning();
+    }
+
+    public boolean isPaused(){
+        return mDownloaderInternal.isPaused();
     }
 
     public void start() {
@@ -43,7 +48,7 @@ public class Downloader {
     }
 
     public void execute(DownloadRequest request) {
-        DownloadTask task = new DownloadTask(request, new DownloadTask.Callback() {
+        DownloadTask task = new DownloadTask(request, mCache, new DownloadTask.Callback() {
             @Override
             public void onComplete(DownloadTask task) {
                 notifyComplete(task.getDownloadRequest());

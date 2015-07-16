@@ -1,4 +1,4 @@
-package com.norddev.downloadmanager;
+package com.norddev.downloadmanager.common;
 
 import android.os.Build;
 import android.os.Handler;

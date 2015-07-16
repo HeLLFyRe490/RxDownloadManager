@@ -3,11 +3,11 @@ package com.norddev.downloadmanager.downloader;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.norddev.downloadmanager.C;
-import com.norddev.downloadmanager.Util;
+import com.norddev.downloadmanager.cache.api.Cache;
+import com.norddev.downloadmanager.common.C;
+import com.norddev.downloadmanager.common.Util;
 import com.norddev.downloadmanager.downloader.api.DownloadHandler;
 import com.norddev.downloadmanager.downloader.api.RetryPolicy;
-import com.norddev.downloadmanager.queue.DownloadRequest;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;
@@ -23,6 +23,7 @@ import okio.BufferedSource;
 public class DownloadTask {
 
     private static final String TAG = "DownloadTask";
+    private final Cache mCache;
     private final Callback mCallback;
     private final DownloadRequest mDownloadRequest;
     private Call mCall;
@@ -32,8 +33,9 @@ public class DownloadTask {
      * @param downloadRequest
      * @param callback
      */
-    public DownloadTask(@NonNull DownloadRequest downloadRequest, @NonNull Callback callback) {
+    public DownloadTask(@NonNull DownloadRequest downloadRequest, Cache cache, @NonNull Callback callback) {
         mDownloadRequest = downloadRequest;
+        mCache = cache;
         mCallback = callback;
     }
 
@@ -75,52 +77,55 @@ public class DownloadTask {
 
         do {
             try {
-                downloadHandler.onRequestStarted(mDownloadRequest);
+                downloadHandler.onRequestStarted(mDownloadRequest, mCache);
 
                 long bytesDownloaded = downloadHandler.getPosition();
                 long rangeOffset = requestedOffset + bytesDownloaded;
-
-                Request.Builder builder = new Request.Builder();
-                builder.url(mDownloadRequest.getURL());
-                Map<String, String> requestHeaders = mDownloadRequest.getRequestHeaders();
-                for (Map.Entry<String, String> header : requestHeaders.entrySet()) {
-                    builder.addHeader(header.getKey(), header.getValue());
-                }
-                //only make a range request if the current offset requires it or the user specified a range
-                if (rangeOffset > 0 || rangeValue != null) {
-                    String range = Util.buildRange(rangeOffset, requestedLength);
-                    builder.header("Range", range);
-                }
-                builder.get();
-                Request request = builder.build();
-
-                OkHttpClient client = new OkHttpClient();
-
-                synchronized (this) {
-                    if (mInterrupted) {
-                        throw new InterruptedException("Interrupted");
-                    }
-                    mCall = client.newCall(request);
-                }
-                Response response = mCall.execute();
-                Log.d(TAG, response.toString());
-                Log.d(TAG, response.headers().toString());
-
-                if (requestedLength == C.UNKNOWN) {
-                    long[] contentRange = Util.parseContentRange(response.header("Content-Range"));
-                    if (contentRange != null) {
-                        requestedLength = contentRange[2];
-                    } else {
-                        requestedLength = response.body().contentLength();
-                    }
-                }
-                Log.d(TAG, "Response received: length = " + Util.formatFileSize(requestedLength));
-
-                downloadHandler.onResponseReceived(response);
-                mCallback.onResponse(this, requestedLength);
+                long fileSize = downloadHandler.getFileSize();
 
                 //request must not be already completed
-                if (requestedLength == C.UNKNOWN || bytesDownloaded < requestedLength) {
+                //FIXME square away the variables at play here (i.e requested length interplay)
+                if (fileSize == C.UNKNOWN || bytesDownloaded < fileSize) {
+
+                    Request.Builder builder = new Request.Builder();
+                    builder.url(mDownloadRequest.getURL());
+                    Map<String, String> requestHeaders = mDownloadRequest.getRequestHeaders();
+                    for (Map.Entry<String, String> header : requestHeaders.entrySet()) {
+                        builder.addHeader(header.getKey(), header.getValue());
+                    }
+                    //only make a range request if the current offset requires it or the user specified a range
+                    if (rangeOffset > 0 || rangeValue != null) {
+                        String range = Util.buildRange(rangeOffset, requestedLength);
+                        builder.header("Range", range);
+                    }
+                    builder.get();
+                    Request request = builder.build();
+
+                    OkHttpClient client = new OkHttpClient();
+
+                    synchronized (this) {
+                        if (mInterrupted) {
+                            throw new InterruptedException("Interrupted");
+                        }
+                        mCall = client.newCall(request);
+                    }
+                    Response response = mCall.execute();
+                    Log.d(TAG, response.toString());
+                    Log.d(TAG, response.headers().toString());
+
+                    if (requestedLength == C.UNKNOWN) {
+                        long[] contentRange = Util.parseContentRange(response.header("Content-Range"));
+                        if (contentRange != null) {
+                            requestedLength = contentRange[2];
+                        } else {
+                            requestedLength = response.body().contentLength();
+                        }
+                    }
+                    Log.d(TAG, "Response received: length = " + Util.formatFileSize(requestedLength));
+
+                    downloadHandler.onResponseReceived(response);
+                    mCallback.onResponse(this, requestedLength);
+
                     if (response.isSuccessful()) {
                         long totalBytesReceived = bytesDownloaded;
                         byte[] buffer = new byte[8192];

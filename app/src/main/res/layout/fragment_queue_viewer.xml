@@ -9,13 +9,31 @@
               android:paddingTop="@dimen/activity_vertical_margin"
               tools:context=".MainActivity">
 
-    <ToggleButton
-        android:id="@+id/activity_queue_pause_resume_button"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:checked="false"
-        android:textOff="Pause"
-        android:textOn="Resume"/>
+        android:orientation="horizontal"
+        android:weightSum="1.0">
+
+        <ToggleButton
+            android:id="@+id/activity_queue_start_shutdown_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:checked="false"
+            android:textOff="Start"
+            android:textOn="Shutdown"/>
+
+        <ToggleButton
+            android:id="@+id/activity_queue_pause_resume_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5"
+            android:checked="false"
+            android:textOff="Pause"
+            android:textOn="Resume"/>
+
+    </LinearLayout>
 
     <ListView
         android:id="@+id/activity_queue_list"

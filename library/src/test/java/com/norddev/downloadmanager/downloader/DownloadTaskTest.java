@@ -1,7 +1,6 @@
 package com.norddev.downloadmanager.downloader;
 
 import com.norddev.downloadmanager.downloader.api.DownloadHandler;
-import com.norddev.downloadmanager.queue.DownloadRequest;
 
 import junit.framework.TestCase;
 

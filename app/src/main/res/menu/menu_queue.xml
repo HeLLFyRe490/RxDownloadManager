@@ -1,21 +1,17 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:app="http://schemas.android.com/apk/res-auto"
       xmlns:tools="http://schemas.android.com/tools"
-      tools:context=".MainActivity">
+      tools:context="com.norddev.downloadmanager.demo.QueueViewerFragment">
 
     <item
         android:id="@+id/action_add_to_queue"
         android:icon="@android:drawable/ic_menu_add"
-        app:showAsAction="always"
-        android:title="@string/action_add_to_queue"/>
+        android:title="@string/action_add_to_queue"
+        app:showAsAction="ifRoom"/>
 
     <item
-        android:id="@+id/action_clear_cache"
-        android:title="@string/action_clear_cache"
+        android:id="@+id/action_clear_queue"
+        android:title="@string/action_clear_queue"
         app:showAsAction="never"/>
 
-    <item
-        android:id="@+id/action_settings"
-        android:title="@string/action_settings"
-        app:showAsAction="never"/>
 </menu>

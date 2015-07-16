@@ -3,7 +3,10 @@ package com.norddev.downloadmanager.demo;
 import android.app.Application;
 
 import com.norddev.downloadmanager.DownloadManager;
-import com.norddev.downloadmanager.queue.DefaultDownloadRequestFactory;
+import com.norddev.downloadmanager.cache.InMemoryCache;
+import com.norddev.downloadmanager.cache.DirectoryCache;
+import com.norddev.downloadmanager.downloader.DefaultDownloadRequestFactory;
+import com.norddev.downloadmanager.queue.InMemoryQueueSource;
 
 /**
  *
@@ -22,7 +25,9 @@ public class DemoApplication extends Application {
 
         sInstance = this;
         DownloadManager.Configuration.Builder builder = new DownloadManager.Configuration.Builder();
-        builder.setDownloadRequestFactory(new DefaultDownloadRequestFactory(this));
+        builder.setDownloadRequestFactory(new DefaultDownloadRequestFactory());
+        builder.setCache(new InMemoryCache(new DirectoryCache(getExternalFilesDir(null))));
+        builder.setQueueSource(new InMemoryQueueSource());
         mDownloadManager = new DownloadManager(builder.build());
     }
 

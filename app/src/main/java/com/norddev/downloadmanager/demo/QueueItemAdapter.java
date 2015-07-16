@@ -7,7 +7,7 @@ import android.widget.BaseAdapter;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.norddev.downloadmanager.Util;
+import com.norddev.downloadmanager.common.Util;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +28,9 @@ public class QueueItemAdapter extends BaseAdapter {
     public void setItems(List<QueueItem> items){
         mItems = items;
         mStatuses.clear();
+        for(QueueItem item : mItems){
+            mStatuses.put(item.getKey(), item.getStatus());
+        }
         notifyDataSetChanged();
     }
 
@@ -53,17 +56,17 @@ public class QueueItemAdapter extends BaseAdapter {
         }
         QueueItem item = mItems.get(position);
         TextView key = (TextView) convertView.findViewById(R.id.queue_list_item_key);
-        key.setText(item.mKey);
+        key.setText(item.getKey());
         TextView url = (TextView) convertView.findViewById(R.id.queue_list_item_url);
-        url.setText(item.mURL);
+        url.setText(item.getURL());
 
         ProgressBar progressBar = (ProgressBar) convertView.findViewById(R.id.queue_list_item_progress_bar);
         TextView progressText = (TextView) convertView.findViewById(R.id.queue_list_item_progress_text);
 
-        DownloadStatus status = mStatuses.get(item.mKey);
+        DownloadStatus status = mStatuses.get(item.getKey());
         if(status != null) {
-            progressBar.setProgress((int) (((double)status.mBytesDownloaded / (double)status.mFileSizeBytes) * 100));
-            progressText.setText(String.format("%s / %s", Util.formatFileSize(status.mBytesDownloaded), Util.formatFileSize(status.mFileSizeBytes)));
+            progressBar.setProgress((int) (((double)status.getBytesDownloaded() / (double)status.getFileSizeBytes()) * 100));
+            progressText.setText(String.format("%s / %s", Util.formatFileSize(status.getBytesDownloaded()), Util.formatFileSize(status.getFileSizeBytes())));
         } else {
             progressBar.setProgress(0);
             progressText.setText(String.format("%s / %s", "-", "-"));
@@ -72,11 +75,6 @@ public class QueueItemAdapter extends BaseAdapter {
     }
 
     public DownloadStatus getStatus(String key) {
-        DownloadStatus status = mStatuses.get(key);
-        if(status == null){
-            status = new DownloadStatus();
-            mStatuses.put(key, status);
-        }
-        return status;
+        return mStatuses.get(key);
     }
 }

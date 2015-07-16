@@ -2,8 +2,8 @@ package com.norddev.downloadmanager.demo;
 
 import android.util.Log;
 
-import com.norddev.downloadmanager.C;
-import com.norddev.downloadmanager.Util;
+import com.norddev.downloadmanager.common.C;
+import com.norddev.downloadmanager.common.Util;
 import com.squareup.okhttp.mockwebserver.Dispatcher;
 import com.squareup.okhttp.mockwebserver.MockResponse;
 import com.squareup.okhttp.mockwebserver.MockWebServer;
@@ -11,7 +11,6 @@ import com.squareup.okhttp.mockwebserver.RecordedRequest;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 public class TestHTTPServer {
@@ -43,10 +42,11 @@ public class TestHTTPServer {
                             return response.setResponseCode(416).setStatus("Requested Range Not Satisfiable");
                         }
                     }
-                    String contentRange = String.format("bytes %d-%d/$d", range[0], bytesToServe - 1, FILE_SIZE);
-                    response.addHeader("Content-Range", contentRange);
+                    String contentRange = Util.buildContentRange(range[0], bytesToServe, FILE_SIZE);
+                    response.addHeader("Content-Range", contentRange).setResponseCode(201);
                 } else {
                     bytesToServe = FILE_SIZE;
+                    response.setResponseCode(200);
                 }
                 ByteArrayOutputStream out = new ByteArrayOutputStream((int)bytesToServe);
                 for(int i = 0; i < bytesToServe; i++){
